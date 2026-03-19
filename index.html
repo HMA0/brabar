@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>حجوزات الحلاقة</title>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#FDFBF7;
+  direction:rtl;
+}
+
+/* ===== HEADER ===== */
+
+.header{
+  background:#5DADE2;
+  color:white;
+  text-align:center;
+  padding:45px 20px 70px;
+  border-bottom-left-radius:40px;
+  border-bottom-right-radius:40px;
+}
+
+.header h1{
+  margin:0;
+  font-size:26px;
+}
+
+.counter{
+  margin-top:20px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+}
+
+.circle{
+  width:65px;
+  height:65px;
+  background:white;
+  color:#5DADE2;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  font-weight:bold;
+}
+
+/* ===== DELETE ALL ===== */
+
+.deleteAll{
+  margin:20px;
+  padding:15px;
+  text-align:center;
+  border:2px solid #f3b5b5;
+  color:#e74c3c;
+  border-radius:18px;
+  background:#fff5f5;
+  cursor:pointer;
+}
+
+/* ===== CARDS ===== */
+
+.container{
+  padding:0 20px 80px;
+}
+
+.card{
+  background:white;
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:15px;
+  box-shadow:0 5px 15px rgba(0,0,0,.08);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.left{
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.number{
+  width:60px;
+  height:60px;
+  background:#a9cbe3;
+  color:#2c6d9b;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  font-weight:bold;
+}
+
+.name{
+  font-size:20px;
+  font-weight:bold;
+}
+
+.time{
+  color:#777;
+  margin-top:5px;
+}
+
+/* buttons */
+
+.iconBtn{
+  border:none;
+  padding:12px;
+  border-radius:12px;
+  cursor:pointer;
+  margin-left:8px;
+  font-size:18px;
+}
+
+.edit{ background:#e8f1f8;color:#5DADE2;}
+.delete{ background:#fdecec;color:#e74c3c;}
+
+/* ===== FLOAT BUTTON ===== */
+
+.fab{
+  position:fixed;
+  bottom:25px;
+  right:25px;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  border:none;
+  background:#5DADE2;
+  color:white;
+  font-size:36px;
+  cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+}
+
+/* ===== MODAL ===== */
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+.modalBox{
+  background:white;
+  width:85%;
+  max-width:400px;
+  border-radius:25px;
+  padding:25px;
+}
+
+.modalBox h2{
+  text-align:center;
+}
+
+label{
+  display:block;
+  margin-top:15px;
+  color:#777;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  margin-top:6px;
+}
+
+.save{
+  background:#5DADE2;
+  color:white;
+  border:none;
+  padding:15px;
+  width:100%;
+  border-radius:14px;
+  margin-top:20px;
+  font-size:16px;
+}
+
+.cancel{
+  background:#f3f3f3;
+  border:none;
+  padding:15px;
+  width:100%;
+  border-radius:14px;
+  margin-top:10px;
+}
+
+.empty{
+  text-align:center;
+  margin-top:70px;
+  color:#888;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>قائمة المواعيد المحجوزه</h1>
+
+  <div class="counter">
+    <div class="circle" id="count">0</div>
+    <span>عدد الحجوزات</span>
+  </div>
+</div>
+
+<div class="deleteAll" onclick="deleteAll()">
+🗑 حذف جميع الحجوزات
+</div>
+
+<div class="container" id="list"></div>
+
+<div class="empty" id="empty">
+<h3>لا توجد حجوزات</h3>
+<p>اضغط على زر + لإضافة حجز</p>
+</div>
+
+<button class="fab" onclick="openModal()">+</button>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+<div class="modalBox">
+
+<h2 id="modalTitle">إضافة حجز</h2>
+
+<label>اسم العميل</label>
+<input id="name">
+
+<label>الوقت المتوقع</label>
+<input id="time">
+
+<button class="save" onclick="saveBooking()">حفظ التعديل</button>
+<button class="cancel" onclick="closeModal()">إلغاء</button>
+
+</div>
+</div>
+
+<script>
+
+const PASSWORD="Hussain2020@";
+let editIndex=null;
+
+function getBookings(){
+ return JSON.parse(localStorage.getItem("bookings"))||[];
+}
+
+function saveData(data){
+ localStorage.setItem("bookings",JSON.stringify(data));
+}
+
+function render(){
+
+ const bookings=getBookings();
+ const list=document.getElementById("list");
+ const empty=document.getElementById("empty");
+
+ document.getElementById("count").innerText=bookings.length;
+
+ list.innerHTML="";
+
+ if(bookings.length===0){
+   empty.style.display="block";
+   return;
+ }
+
+ empty.style.display="none";
+
+ bookings.forEach((b,i)=>{
+
+ list.innerHTML+=`
+ <div class="card">
+
+   <div class="left">
+     <div class="number">${i+1}</div>
+
+     <div>
+       <div class="name">${b.name}</div>
+       <div class="time">🕒 ${b.time}</div>
+     </div>
+   </div>
+
+   <div>
+     <button class="iconBtn edit" onclick="editBooking(${i})">✏️</button>
+     <button class="iconBtn delete" onclick="deleteOne(${i})">🗑</button>
+   </div>
+
+ </div>`;
+ });
+
+}
+
+/* MODAL */
+
+function openModal(){
+ editIndex=null;
+ document.getElementById("modalTitle").innerText="إضافة حجز";
+ document.getElementById("modal").style.display="flex";
+}
+
+function closeModal(){
+ document.getElementById("modal").style.display="none";
+}
+
+function saveBooking(){
+
+ const name=document.getElementById("name").value;
+ const time=document.getElementById("time").value;
+
+ if(!name||!time) return;
+
+ const bookings=getBookings();
+
+ if(editIndex!==null){
+   bookings[editIndex]={name,time};
+ }else{
+   bookings.push({name,time});
+ }
+
+ saveData(bookings);
+ closeModal();
+ render();
+
+ document.getElementById("name").value="";
+ document.getElementById("time").value="";
+}
+
+function editBooking(i){
+ const bookings=getBookings();
+
+ editIndex=i;
+ document.getElementById("modalTitle").innerText="تعديل الحجز";
+
+ document.getElementById("name").value=bookings[i].name;
+ document.getElementById("time").value=bookings[i].time;
+
+ document.getElementById("modal").style.display="flex";
+}
+
+function deleteOne(i){
+
+ const pass=prompt("ادخل كلمة السر:");
+
+ if(pass!==PASSWORD){
+   alert("كلمة السر غير صحيحة");
+   return;
+ }
+
+ const bookings=getBookings();
+ bookings.splice(i,1);
+ saveData(bookings);
+ render();
+}
+
+function deleteAll(){
+
+ const pass=prompt("ادخل كلمة السر لحذف الكل:");
+
+ if(pass!==PASSWORD){
+   alert("كلمة السر غير صحيحة");
+   return;
+ }
+
+ localStorage.removeItem("bookings");
+ render();
+}
+
+render();
+
+</script>
+
+</body>
+</html>
